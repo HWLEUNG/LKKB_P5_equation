@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天平守護者 The Guardian's Balance</title>
+    <style>
+        :root {
+            /* Default Theme (Forest) */
+            --primary-color: #66bb6a;
+            --primary-dark: #2e7d32;
+            --bg-gradient: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            --text-color: #37474f;
+            --wood-color: #8d6e63;
+        }
+
+        /* Castle Theme */
+        body.theme-castle {
+            --primary-color: #78909c;
+            --primary-dark: #455a64;
+            --bg-gradient: linear-gradient(135deg, #eceff1 0%, #cfd8dc 100%);
+        }
+
+        /* Boss Theme */
+        body.theme-boss {
+            --primary-color: #ab47bc;
+            --primary-dark: #7b1fa2;
+            --bg-gradient: linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%);
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: background 1s ease;
+        }
+
+        /* Clouds Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(circle at 15% 50%, white 20px, transparent 21px),
+                radial-gradient(circle at 25% 60%, white 30px, transparent 31px),
+                radial-gradient(circle at 85% 30%, white 40px, transparent 41px);
+            opacity: 0.6;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h1 { 
+            margin-bottom: 5px; 
+            color: var(--primary-dark); 
+            text-shadow: 2px 2px 0px white;
+            font-size: 2.2em;
+            transition: color 1s;
+        }
+        .subtitle { font-size: 1em; color: #546e7a; margin-bottom: 15px; font-weight: bold; }
+        
+        .game-container {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px 30px 30px 30px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1), inset 0 0 0 5px white;
+            border: 5px solid var(--primary-color);
+            text-align: center;
+            position: relative;
+            transition: border-color 1s;
+        }
+
+        /* --- HEARTS DISPLAY --- */
+        .hearts-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 2px solid #ff5252;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- OVERLAY STYLES --- */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.5s;
+        }
+
+        .intro-box {
+            background: white;
+            padding: 25px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            border: 6px solid var(--primary-color);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+        .intro-box h2 {
+            color: var(--primary-dark);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .intro-list {
+            text-align: left;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .intro-item {
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            color: #37474f;
+            line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .intro-num {
+            color: #d84315;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.2em;
+            min-width: 25px;
+        }
+
+        .btn-start {
+            background: #ffd740;
+            color: #bf360c;
+            font-size: 24px;
+            padding: 12px 50px;
+            border-radius: 50px;
+            border: 4px solid #fff;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 6px 0 #f57f17;
+            transition: transform 0.1s;
+            margin-top: 10px;
+            font-family: inherit;
+        }
+
+        .btn-start:hover { background: #ffea00; transform: scale(1.05); }
+        .btn-start:active { transform: translateY(4px); box-shadow: 0 2px 0 #f57f17; }
+
+        .btn-retry {
+            background: #ff5252;
+            color: white;
+            box-shadow: 0 6px 0 #d32f2f;
+        }
+        .btn-retry:hover { background: #ff1744; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Balance Scale Styling */
+        .balance-area {
+            height: 280px;
+            position: relative;
+            margin: 40px 0 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .balance-stand {
+            width: 20px;
+            height: 220px;
+            background: linear-gradient(to right, #5d4037, #8d6e63);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            margin-left: -10px;
+            z-index: 1;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+        
+        .balance-stand::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -40px;
+            width: 100px;
+            height: 20px;
+            background: #5d4037;
+            border-radius: 10px;
+        }
+
+        .balance-beam {
+            width: 440px;
+            height: 18px;
+            background: linear-gradient(to bottom, #d7ccc8, #a1887f);
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            margin-left: -220px;
+            border-radius: 10px;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        
+        .balance-beam::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle at 30% 30%, #ffd54f, #fbc02d);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .pan {
+            width: 120px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 4px solid #fbc02d;
+            border-top: none;
+            border-radius: 0 0 60px 60px;
+            position: absolute;
+            top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            flex-direction: column;
+            color: #d81b60;
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.1);
+        }
+
+        .pan-left { left: -60px; }
+        .pan-right { right: -60px; }
+        
+        .pan::before {
+            content: '';
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            width: 4px;
+            height: 45px;
+            background: #8d6e63;
+        }
+        .pan::after {
+            content: '';
+            position: absolute;
+            top: -45px;
+            left: 10px;
+            right: 10px;
+            height: 45px;
+            border-left: 3px solid #8d6e63;
+            border-right: 3px solid #8d6e63;
+            transform: perspective(50px) rotateX(10deg);
+        }
+
+        .tilt-left { transform: rotate(-15deg); }
+        .tilt-right { transform: rotate(15deg); }
+        .balanced { transform: rotate(0deg); }
+        .shake { animation: shake 0.5s; }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(4deg); }
+            40% { transform: rotate(-4deg); }
+            60% { transform: rotate(4deg); }
+            80% { transform: rotate(-4deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* Message Box */
+        .message-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            min-height: 80px;
+            border: 4px solid var(--primary-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-right: 170px; /* Space for Blue */
+            transition: border-color 1s;
+        }
+
+        .message-box::after {
+            content: '';
+            position: absolute;
+            right: -24px;
+            top: 50%;
+            margin-top: -12px;
+            width: 0; height: 0; 
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 24px solid var(--primary-color);
+            transition: border-left-color 1s;
+        }
+        
+        .message-box::before {
+            content: '';
+            position: absolute;
+            right: -17px;
+            top: 50%;
+            margin-top: -10px;
+            width: 0; height: 0; 
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 20px solid #fff;
+            z-index: 1;
+        }
+        
+        .character-container {
+            position: absolute;
+            top: 50%;
+            right: -180px;
+            width: 160px;
+            margin-top: -90px;
+            z-index: 20;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(5px 5px 5px rgba(0,0,0,0.2));
+            pointer-events: none;
+        }
+
+        @media (max-width: 700px) {
+            .message-box {
+                margin-right: 0;
+                margin-top: 150px;
+            }
+            .message-box::after, .message-box::before {
+                right: 50%;
+                top: -24px;
+                margin-top: 0;
+                margin-right: -12px;
+                border-left: 12px solid transparent;
+                border-right: 12px solid transparent;
+                border-bottom: 24px solid var(--primary-color);
+                border-top: none;
+            }
+            .message-box::before {
+                top: -17px;
+                margin-right: -10px;
+                border-bottom: 20px solid #fff;
+            }
+            .character-container {
+                right: 50%;
+                margin-right: -75px;
+                top: -160px;
+                margin-top: 0;
+                width: 150px;
+            }
+        }
+
+        .character-img { width: 100%; height: auto; }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(-2deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(-2deg); }
+        }
+        
+        #guardian-text-zh { font-size: 1.4em; color: #d84315; font-weight: bold; }
+        .en-text { font-size: 0.9em; color: #78909c; font-style: italic; margin-top: 5px; }
+
+        /* Controls */
+        .controls-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 170px;
+            border: 3px solid #e0e0e0;
+            position: relative;
+        }
+        
+        .control-group::before {
+            content: 'LEFT';
+            position: absolute;
+            top: -12px; left: 20px;
+            background: #e0e0e0;
+            color: #666;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .control-group:last-child::before { content: 'RIGHT'; }
+
+        .control-group h3 {
+            margin: 5px 0 10px 0;
+            font-size: 20px;
+            color: #455a64;
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 18px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.1;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            position: relative;
+            top: 0;
+            font-family: inherit;
+        }
+
+        button:active { top: 4px; box-shadow: 0 0 0 rgba(0,0,0,0.2); }
+        .btn-add { background-color: #42a5f5; } 
+        .btn-sub { background-color: #ef5350; } 
+        button:hover { filter: brightness(1.1); }
+        button:disabled { background-color: #cfd8dc; color: #90a4ae; box-shadow: none; cursor: not-allowed; top: 4px; }
+        button span { font-size: 0.7em; opacity: 0.9; font-weight: normal; margin-top: 2px; }
+
+        /* Gems */
+        .gem-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 50px;
+            display: inline-flex;
+            position: relative; 
+            z-index: 15; 
+        }
+
+        .gem {
+            width: 35px;
+            height: 35px;
+            background: #cfd8dc;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            transition: all 0.5s;
+            color: #90a4ae;
+            border: 2px solid white;
+        }
+        .gem.active {
+            background: #ffd740; /* Gold */
+            box-shadow: 0 0 15px #ff6f00;
+            transform: scale(1.2);
+            color: #e65100;
+            font-size: 20px;
+            border-color: #ff6f00;
+        }
+
+        /* Interactive Elements */
+        .bird {
+            position: absolute;
+            font-size: 70px;
+            cursor: pointer;
+            z-index: 10;
+            animation: bounce 1s infinite alternate;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+            transition: transform 0.2s;
+        }
+        .bird:hover { transform: scale(1.1) translateY(-10px); }
+        
+        .hidden-content { 
+            filter: blur(12px); 
+            transition: filter 0.5s; 
+            background: #eee;
+            border-radius: 5px;
+            padding: 0 5px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #ffb74d;
+        }
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            font-size: 20px;
+            text-align: center;
+            border: 3px solid #4fc3f7;
+            border-radius: 10px;
+            font-family: inherit;
+            color: #0277bd;
+        }
+
+        #level-indicator {
+            background: var(--primary-dark);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: bold;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+            transition: background 1s;
+        }
+
+        @keyframes bounce { from { top: -60px; } to { top: -70px; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- Intro Overlay -->
+    <div id="intro-overlay" class="overlay">
+        <div class="intro-box">
+            <h2>🛡️ 冒險模式 Adventure Mode</h2>
+            <div class="intro-list">
+                <div class="intro-item">
+                    <span class="intro-num">♥</span>
+                    <span>你有 3 顆愛心 (Lives)<br><small>You have 3 lives per level.</small></span>
+                </div>
+                <div class="intro-item">
+                    <span class="intro-num">①</span>
+                    <span>先在「左邊」選擇一個操作<br><small>Select operation on the LEFT</small></span>
+                </div>
+                <div class="intro-item">
+                    <span class="intro-num">②</span>
+                    <span>再到「右邊」選擇相同的操作<br><small>Select SAME operation on the RIGHT</small></span>
+                </div>
+                <div class="intro-item">
+                    <span class="intro-num">③</span>
+                    <span>兩邊都選對後，天平會平衡<br><small>Balance will level out</small></span>
+                </div>
+                <div class="intro-item">
+                    <span class="intro-num">④</span>
+                    <span>平衡後，填寫未知數的值並提交<br><small>Enter the value and submit</small></span>
+                </div>
+            </div>
+            <button class="btn-start" onclick="closeIntro()">開始冒險 Start!</button>
+        </div>
+    </div>
+
+    <!-- Game Over Overlay (Hidden by default) -->
+    <div id="game-over-overlay" class="overlay" style="display:none;">
+        <div class="intro-box">
+            <h2 style="color:#d32f2f;">💔 挑戰失敗 Failed!</h2>
+            <p style="font-size:1.2em; color:#555;">你的愛心用完了...<br>必須重新挑戰這一關！</p>
+            <button class="btn-start btn-retry" onclick="restartLevel()">重新挑戰 Retry</button>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <!-- Hearts Display -->
+        <div class="hearts-display" id="hearts-display">❤️❤️❤️</div>
+
+        <h1>⚖️ 天平守護者</h1>
+        <div class="subtitle">Guardian's Balance Adventure</div>
+        <div id="level-indicator">Level 1 - 迷霧森林</div>
+        
+        <div class="message-box">
+            <div id="guardian-text-zh">嗨！我是 Blue！</div>
+            <div id="guardian-text-en" class="en-text">Hi! I am Blue!</div>
+            <div class="character-container">
+                <img src="https://raw.githubusercontent.com/HWLEUNG/LKKB_P5_equation/main/Blue.png" alt="Blue Character" class="character-img">
+            </div>
+        </div>
+
+        <div class="balance-area">
+            <div class="balance-beam balanced" id="beam">
+                <div class="pan pan-left" id="pan-left"></div>
+                <div class="pan pan-right" id="pan-right"></div>
+            </div>
+            <div class="balance-stand"></div>
+        </div>
+
+        <div id="boss-input-area" style="display:none;">
+            <div class="input-group" id="boss-formula"></div>
+            <button class="btn-add" onclick="checkBossInput()">解開鎖鏈 <span>Unlock</span></button>
+        </div>
+
+        <div class="controls-wrapper" id="controls"></div>
+
+        <div class="gem-container" id="gems">
+            <div class="gem" id="gem-1">1</div>
+            <div class="gem" id="gem-2">2</div>
+            <div class="gem" id="gem-3">3</div>
+            <div class="gem" id="gem-4">4</div>
+            <div class="gem" id="gem-5">5</div>
+            <div class="gem" id="gem-6">6</div>
+            <div class="gem" id="gem-7">7</div>
+            <div class="gem" id="gem-8">8</div>
+            <div class="gem" id="gem-9">9</div>
+            <div class="gem" id="gem-10">10</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Logic ---
+        
+        let lives = 3;
+        const variables = ['x', 'y', 'z', 'a', 'b', 'n', 'm', 'p', 't', 'k'];
+        let levels = [];
+        let currentLevelIndex = 0;
+        let leftState = 0;
+        let rightState = 0;
+
+        function closeIntro() {
+            const overlay = document.getElementById('intro-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            initLevel(); // Ensure correct theme is applied
+        }
+
+        function updateHearts() {
+            let heartsStr = '';
+            for(let i=0; i<lives; i++) heartsStr += '❤️';
+            for(let i=lives; i<3; i++) heartsStr += '🤍'; // Empty hearts
+            document.getElementById('hearts-display').innerText = heartsStr;
+        }
+
+        function loseLife() {
+            lives--;
+            updateHearts();
+            if (lives <= 0) {
+                document.getElementById('game-over-overlay').style.display = 'flex';
+            }
+        }
+
+        function restartLevel() {
+            lives = 3;
+            updateHearts();
+            document.getElementById('game-over-overlay').style.display = 'none';
+            // Regenerate this level to prevent memorizing
+            generateSingleLevel(currentLevelIndex); 
+            initLevel();
+        }
+
+        // --- Level Generation ---
+
+        const praiseZh = ["太棒了！完美平衡！", "做得好！你是天平大師！", "真聰明！繼續保持！", "你是數學天才！"];
+        const praiseEn = ["Awesome! Perfectly Balanced!", "Great job! You're a Master!", "So smart! Keep it up!", "You are a Math Genius!"];
+
+        function getRandomPraise() {
+            const index = Math.floor(Math.random() * praiseZh.length);
+            return { zh: praiseZh[index], en: praiseEn[index] };
+        }
+
+        function generateSingleLevel(i) {
+             let min = 1, max = 9;
+            if (i >= 3) { min = 10; max = 25; }
+            if (i >= 7) { min = 20; max = 50; }
+            
+            const v = variables[Math.floor(Math.random() * variables.length)];
+            const addVal = Math.floor(Math.random() * (max - min + 1)) + min;
+            const answer = Math.floor(Math.random() * (max - min + 1)) + min;
+            const total = answer + addVal;
+
+            let type = 'left-var';
+            if (i >= 3 && i < 6) type = 'right-var';
+            if (i >= 6 && i < 8) type = Math.random() > 0.5 ? 'bird-left' : 'bird-right';
+            if (i === 9) type = 'boss';
+
+            let level = {
+                id: i + 1,
+                targetNum: addVal,
+                correctOp: 'sub',
+                variable: v,
+                answer: answer,
+                type: type
+            };
+
+            // Set Content
+            if (type === 'left-var' || type === 'bird-left') {
+                level.leftContent = `${v} + ${addVal}`;
+                level.rightContent = `${total}`;
+                level.answerLeft = v;
+                level.answerRight = answer;
+            } else if (type === 'right-var' || type === 'bird-right') {
+                level.leftContent = `${total}`;
+                level.rightContent = `${v} + ${addVal}`;
+                level.answerLeft = answer;
+                level.answerRight = v;
+            } else if (type === 'boss') {
+                level.leftContent = `${v} + ${addVal}`;
+                level.rightContent = `${total}`;
+                level.answerLeft = v;
+                level.answerRight = answer;
+            }
+
+            // Set Theme Names
+            let areaName = "迷霧森林 (Forest)";
+            if (i >= 3) areaName = "古老城堡 (Castle)";
+            if (i >= 7) areaName = "魔王巢穴 (Lair)";
+
+            // Set Texts
+            if (type === 'boss') {
+                level.titleZh = `Level ${i+1}: 最終魔王`;
+                level.textZh = `${v} + ${addVal} = ${total}。天平被鎖住了！快幫我填空解鎖！`;
+                level.textEn = `Locked! Fill in the blanks to unlock.`;
+            } else if (type.includes('bird')) {
+                level.titleZh = `Level ${i+1}: ${areaName}`;
+                level.textZh = `有隻鳥擋住了未知數，快點擊把牠趕走！`;
+                level.textEn = `Something is blocking the variable. Click to shoo it away!`;
+                level.hasBird = true;
+            } else {
+                level.titleZh = `Level ${i+1}: ${areaName}`;
+                level.textZh = `${v} 在天平上。想把 +${addVal} 變不見，要用加法還是減法？`;
+                level.textEn = `To remove +${addVal}, use Addition or Subtraction?`;
+            }
+            
+            levels[i] = level;
+        }
+
+        function generateLevels() {
+            levels = [];
+            for (let i = 0; i < 10; i++) {
+                levels.push({}); // Placeholder
+                generateSingleLevel(i);
+            }
+        }
+
+        function initLevel() {
+            // Apply Theme
+            document.body.className = '';
+            if (currentLevelIndex < 3) {
+                // Default Forest
+            } else if (currentLevelIndex < 7) {
+                document.body.classList.add('theme-castle');
+            } else {
+                document.body.classList.add('theme-boss');
+            }
+
+            // Reset Level State
+            leftState = 0;
+            rightState = 0;
+            lives = 3;
+            updateHearts();
+
+            const level = levels[currentLevelIndex];
+            const beam = document.getElementById('beam');
+            const controls = document.getElementById('controls');
+            const bossArea = document.getElementById('boss-input-area');
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+            
+            beam.className = 'balance-beam balanced';
+            bossArea.style.display = 'none';
+            controls.innerHTML = '';
+            controls.style.display = 'flex';
+
+            document.getElementById('level-indicator').innerText = `${level.titleZh}`;
+            guardianZh.innerText = level.textZh;
+            guardianEn.innerText = level.textEn;
+
+            let lContent = level.leftContent;
+            let rContent = level.rightContent;
+
+            if (level.hasBird) {
+                const birdHtml = `<div class='bird' style='top:-60px;' onclick='removeBird(this, ${level.targetNum})'>🦉</div>`;
+                const hiddenSpan = `<span id='hidden-var' class='hidden-content'>${level.variable}</span>`;
+                
+                if (level.type === 'bird-left') {
+                    lContent = `${birdHtml} ${hiddenSpan} + ${level.targetNum}`;
+                } else {
+                    rContent = `${birdHtml} ${hiddenSpan} + ${level.targetNum}`;
+                }
+            }
+
+            document.getElementById('pan-left').innerHTML = lContent;
+            document.getElementById('pan-right').innerHTML = rContent;
+
+            if (level.type === 'boss') {
+                bossArea.style.display = 'flex';
+                const formulaDiv = document.getElementById('boss-formula');
+                formulaDiv.innerHTML = `
+                    <span>${level.variable} + ${level.targetNum} - </span>
+                    <input type="number" id="input-left" placeholder="?">
+                    <span> = ${level.rightContent} - </span>
+                    <input type="number" id="input-right" placeholder="?">
+                `;
+            } else if (!level.hasBird) {
+                renderChoiceButtons(level.targetNum);
+            }
+        }
+
+        window.removeBird = function(el, targetNum) {
+            el.style.display = 'none';
+            document.getElementById('hidden-var').classList.remove('hidden-content');
+            document.getElementById('guardian-text-zh').innerText = `太棒了！現在要消除 +${targetNum}，請選擇正確的魔法！`;
+            document.getElementById('guardian-text-en').innerText = `Great! Now choose the correct magic to remove +${targetNum}!`;
+            renderChoiceButtons(targetNum);
+        }
+
+        function renderChoiceButtons(num) {
+            const controls = document.getElementById('controls');
+            controls.innerHTML = '';
+            
+            const leftGroup = document.createElement('div');
+            leftGroup.className = 'control-group';
+            leftGroup.innerHTML = `<h3>左邊</h3>`; 
+            leftGroup.appendChild(createBtn('left', 'add', num));
+            leftGroup.appendChild(createBtn('left', 'sub', num));
+
+            const rightGroup = document.createElement('div');
+            rightGroup.className = 'control-group';
+            rightGroup.innerHTML = `<h3>右邊</h3>`; 
+            rightGroup.appendChild(createBtn('right', 'add', num));
+            rightGroup.appendChild(createBtn('right', 'sub', num));
+
+            controls.appendChild(leftGroup);
+            controls.appendChild(rightGroup);
+        }
+
+        function createBtn(side, op, num) {
+            const btn = document.createElement('button');
+            const opSymbol = op === 'add' ? '+' : '-';
+            const labelEn = op === 'add' ? 'Add' : 'Sub';
+            btn.innerHTML = `${opSymbol} ${num}<br><span>${labelEn}</span>`;
+            btn.className = op === 'add' ? 'btn-add' : 'btn-sub';
+            btn.onclick = () => checkAction(side, op, num, btn);
+            return btn;
+        }
+
+        function checkAction(side, op, num, btn) {
+            const level = levels[currentLevelIndex];
+            const beam = document.getElementById('beam');
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+
+            if (op !== level.correctOp) {
+                beam.classList.add('shake');
+                setTimeout(() => beam.classList.remove('shake'), 500);
+                
+                loseLife();
+                if(lives > 0) {
+                    if(op === 'add') {
+                        guardianZh.innerText = `哎呀！原本是 +${num}，再加 ${num} 會變更大！(扣1愛心)`;
+                        guardianEn.innerText = `Oops! Adding makes it bigger! (-1 Heart)`;
+                    } else {
+                        guardianZh.innerText = `方向不對喔，再試試看？(扣1愛心)`;
+                        guardianEn.innerText = `Wrong direction. Try again? (-1 Heart)`;
+                    }
+                }
+                return;
+            }
+
+            btn.disabled = true;
+            const parent = btn.parentElement;
+            const siblings = parent.getElementsByTagName('button');
+            for(let sb of siblings) sb.disabled = true;
+
+            modifyBalance(side, op, num);
+        }
+
+        function modifyBalance(side, op, num) {
+            const beam = document.getElementById('beam');
+            const opText = op === 'add' ? `+${num}` : `-${num}`;
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+
+            if (side === 'left') {
+                leftState = 1;
+                document.getElementById('pan-left').innerHTML += ` <br><small style='color:#d81b60'>(${opText})</small>`;
+            } else {
+                rightState = 1;
+                document.getElementById('pan-right').innerHTML += ` <br><small style='color:#d81b60'>(${opText})</small>`;
+            }
+
+            if (leftState === 1 && rightState === 0) {
+                beam.className = 'balance-beam tilt-right'; 
+                guardianZh.innerText = "天平歪了！記得：左邊做什麼，右邊也要做什麼！";
+                guardianEn.innerText = "It's tilting! Do the same to the right!";
+            } else if (leftState === 0 && rightState === 1) {
+                beam.className = 'balance-beam tilt-left';
+                guardianZh.innerText = "不平衡了！快去操作另一邊！";
+                guardianEn.innerText = "Unbalanced! Quickly, do the same to the other side!";
+            } else if (leftState === 1 && rightState === 1) {
+                beam.className = 'balance-beam balanced';
+                setTimeout(() => showFinalInput(), 1000);
+            }
+        }
+
+        function showFinalInput() {
+            const level = levels[currentLevelIndex];
+            const controls = document.getElementById('controls');
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+            
+            controls.innerHTML = '';
+            
+            guardianZh.innerText = `平衡了！那麼 ${level.variable} 等於多少呢？`;
+            guardianEn.innerText = `Balanced! So what is ${level.variable}?`;
+            
+            const inputArea = document.createElement('div');
+            inputArea.className = 'input-group';
+            inputArea.style.marginTop = '20px';
+            inputArea.innerHTML = `
+                <span style="font-size: 24px; font-weight: bold; color: #d84315;">${level.variable} = </span>
+                <input type="number" id="final-val" placeholder="?" onkeydown="if(event.key==='Enter') checkFinalAnswer()">
+                <button class="btn-add" style="margin-left:10px; background-color:#66bb6a;" onclick="checkFinalAnswer()">提交 Submit</button>
+            `;
+            controls.appendChild(inputArea);
+        }
+
+        window.checkFinalAnswer = function() {
+            const level = levels[currentLevelIndex];
+            const inputVal = document.getElementById('final-val').value;
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+            
+            if (parseInt(inputVal) === level.answer) {
+                finishLevel();
+            } else {
+                loseLife();
+                if (lives > 0) {
+                    guardianZh.innerText = `算錯囉！${level.variable} + ${level.targetNum} = ${level.answer + level.targetNum}... 再算一次？(扣1愛心)`;
+                    guardianEn.innerText = `Calculated wrong! Try again? (-1 Heart)`;
+                    const input = document.getElementById('final-val');
+                    input.style.border = '3px solid red';
+                    setTimeout(() => input.style.border = '3px solid #4fc3f7', 500);
+                }
+            }
+        }
+
+        window.checkBossInput = function() {
+            const level = levels[currentLevelIndex];
+            const val1 = document.getElementById('input-left').value;
+            const val2 = document.getElementById('input-right').value;
+            const guardianZh = document.getElementById('guardian-text-zh');
+            const guardianEn = document.getElementById('guardian-text-en');
+            
+            if (parseInt(val1) === level.targetNum && parseInt(val2) === level.targetNum) {
+                document.getElementById('boss-input-area').style.display = 'none';
+                guardianZh.innerText = "鎖鏈解開！現在選擇正確的魔法！";
+                guardianEn.innerText = "Unlocked! Now choose the correct magic!";
+                renderChoiceButtons(level.targetNum);
+            } else {
+                loseLife();
+                if (lives > 0) {
+                    guardianZh.innerText = `咒語錯誤！我們要消除 +${level.targetNum}，應該減多少？(扣1愛心)`;
+                    guardianEn.innerText = `Wrong spell! To remove +${level.targetNum}, what should we subtract?`;
+                }
+            }
+        }
+
+        function finishLevel() {
+            const level = levels[currentLevelIndex];
+            document.getElementById('pan-left').innerHTML = `<span style='color:#2e7d32; font-size:1.2em'>${level.answerLeft}</span>`;
+            document.getElementById('pan-right').innerHTML = `<span style='color:#2e7d32; font-size:1.2em'>${level.answerRight}</span>`;
+            
+            const praise = getRandomPraise();
+            document.getElementById('guardian-text-zh').innerText = `${praise.zh}`;
+            document.getElementById('guardian-text-en').innerText = `${praise.en}`;
+            
+            const gem = document.getElementById(`gem-${currentLevelIndex + 1}`);
+            gem.innerText = '💎';
+            gem.classList.add('active');
+
+            const controls = document.getElementById('controls');
+            controls.innerHTML = '';
+            
+            if (currentLevelIndex < levels.length - 1) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn-add'; 
+                nextBtn.style.background = '#66bb6a'; 
+                nextBtn.innerHTML = "下一關 <span>Next Level</span> ➡️";
+                nextBtn.onclick = () => {
+                    currentLevelIndex++;
+                    initLevel();
+                };
+                controls.appendChild(nextBtn);
+            } else {
+                document.querySelector('h1').innerText = "🎉 冒險完成！Victory! 🎉";
+                controls.innerHTML = "<h3>Blue:「你拯救了所有天平！」<br><span style='font-size:0.8em; color:#666;'>You saved all the balances!</span></h3>";
+            }
+        }
+
+        // Start Game
+        generateLevels();
+    </script>
+</body>
+</html>

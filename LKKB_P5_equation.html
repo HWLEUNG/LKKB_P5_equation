@@ -114,6 +114,8 @@
             border: 6px solid var(--primary-color);
             box-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .intro-box h2 {
@@ -175,6 +177,32 @@
         .btn-retry:hover { background: #ff1744; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Report Card Styles */
+        .report-card {
+            text-align: left;
+            padding: 15px;
+            background: #fff3e0;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            border: 2px dashed #ffb74d;
+        }
+        .report-section {
+            margin-bottom: 15px;
+        }
+        .report-title {
+            font-weight: bold;
+            color: #e65100;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .report-text {
+            color: #5d4037;
+            margin-top: 5px;
+            font-size: 1.1em;
+        }
 
         /* Balance Scale Styling */
         .balance-area {
@@ -584,12 +612,26 @@
         </div>
     </div>
 
-    <!-- Game Over Overlay (Hidden by default) -->
+    <!-- Game Over Overlay -->
     <div id="game-over-overlay" class="overlay" style="display:none;">
         <div class="intro-box">
             <h2 style="color:#d32f2f;">💔 挑戰失敗 Failed!</h2>
             <p style="font-size:1.2em; color:#555;">你的愛心用完了...<br>必須重新挑戰這一關！</p>
             <button class="btn-start btn-retry" onclick="restartLevel()">重新挑戰 Retry</button>
+        </div>
+    </div>
+
+    <!-- Final Report Overlay -->
+    <div id="final-report-overlay" class="overlay" style="display:none;">
+        <div class="intro-box">
+            <h2>📜 守護者結業報告</h2>
+            <div class="character-container" style="position:relative; top:0; right:0; width:100px; margin:0 auto; transform:none;">
+                <img src="https://raw.githubusercontent.com/HWLEUNG/LKKB_P5_equation/main/Blue.png" alt="Blue" class="character-img">
+            </div>
+            <div id="report-content">
+                <!-- JS will populate this -->
+            </div>
+            <button class="btn-start" onclick="location.reload()">再來一次 Play Again</button>
         </div>
     </div>
 
@@ -642,6 +684,14 @@
         // --- Game Logic ---
         
         let lives = 3;
+        // Tracking User Mistakes
+        let gameStats = {
+            opErrors: 0,    // Wrong + or - choice
+            calcErrors: 0,  // Wrong final answer
+            bossErrors: 0,  // Wrong unlock code
+            restarts: 0     // Levels failed
+        };
+
         const variables = ['x', 'y', 'z', 'a', 'b', 'n', 'm', 'p', 't', 'k'];
         let levels = [];
         let currentLevelIndex = 0;
@@ -652,20 +702,27 @@
             const overlay = document.getElementById('intro-overlay');
             overlay.style.opacity = '0';
             setTimeout(() => { overlay.style.display = 'none'; }, 500);
-            initLevel(); // Ensure correct theme is applied
+            initLevel(); 
         }
 
         function updateHearts() {
             let heartsStr = '';
             for(let i=0; i<lives; i++) heartsStr += '❤️';
-            for(let i=lives; i<3; i++) heartsStr += '🤍'; // Empty hearts
+            for(let i=lives; i<3; i++) heartsStr += '🤍'; 
             document.getElementById('hearts-display').innerText = heartsStr;
         }
 
-        function loseLife() {
+        function loseLife(type) {
             lives--;
             updateHearts();
+            
+            // Record mistake type
+            if(type === 'op') gameStats.opErrors++;
+            if(type === 'calc') gameStats.calcErrors++;
+            if(type === 'boss') gameStats.bossErrors++;
+
             if (lives <= 0) {
+                gameStats.restarts++;
                 document.getElementById('game-over-overlay').style.display = 'flex';
             }
         }
@@ -674,9 +731,46 @@
             lives = 3;
             updateHearts();
             document.getElementById('game-over-overlay').style.display = 'none';
-            // Regenerate this level to prevent memorizing
             generateSingleLevel(currentLevelIndex); 
             initLevel();
+        }
+
+        // --- Report Logic ---
+        function showFinalReport() {
+            const overlay = document.getElementById('final-report-overlay');
+            const content = document.getElementById('report-content');
+            
+            let feedbackHTML = "";
+            let totalErrors = gameStats.opErrors + gameStats.calcErrors + gameStats.bossErrors;
+
+            // 1. General Praise
+            if (totalErrors === 0 && gameStats.restarts === 0) {
+                feedbackHTML += `<div class="report-section"><div class="report-title">🏆 完美守護者 (Perfect)</div><div class="report-text">太驚人了！你一次都沒有錯，你是真正的天平大師！Blue 對你佩服得五體投地！</div></div>`;
+            } else if (gameStats.restarts === 0) {
+                feedbackHTML += `<div class="report-section"><div class="report-title">🌟 優秀守護者 (Excellent)</div><div class="report-text">你非常順利地完成了任務！雖然有一點點小失誤，但你掌握得很好！</div></div>`;
+            } else {
+                feedbackHTML += `<div class="report-section"><div class="report-title">🛡️ 堅毅守護者 (Persistent)</div><div class="report-text">雖然過程充滿挑戰，但你沒有放棄，堅持到了最後！這種精神才是最重要的！</div></div>`;
+            }
+
+            // 2. Specific Analysis
+            if (gameStats.opErrors > 2) {
+                feedbackHTML += `<div class="report-section"><div class="report-title">💡 魔法小提示：運算符號</div><div class="report-text">Blue 發現你有時候會猶豫要用加法還是減法。記住口訣：<strong>「+號用減法，-號用加法」</strong>，這樣就能讓未知數孤單一人囉！</div></div>`;
+            }
+
+            if (gameStats.calcErrors > 2) {
+                feedbackHTML += `<div class="report-section"><div class="report-title">🧮 魔法小提示：小心計算</div><div class="report-text">你的觀念很正確，但在最後算數字時有點著急了。下次試著<strong>「慢慢算，檢查一次」</strong>，你可以做得更棒！</div></div>`;
+            }
+
+            if (gameStats.bossErrors > 1) {
+                feedbackHTML += `<div class="report-section"><div class="report-title">🗝️ 魔法小提示：解鎖咒語</div><div class="report-text">魔王關卡的鎖鏈需要填入<strong>「原本題目裡的數字」</strong>才能消除。觀察題目上的數字是誰擋住了未知數，就填那個數字！</div></div>`;
+            }
+
+            if (totalErrors > 0 && gameStats.opErrors <= 2 && gameStats.calcErrors <= 2 && gameStats.bossErrors <= 1) {
+                 feedbackHTML += `<div class="report-section"><div class="report-title">✨ Blue 的觀察</div><div class="report-text">你的錯誤非常少，幾乎已經完全學會了！只要多練習幾次，你一定能成為完美守護者！</div></div>`;
+            }
+
+            content.innerHTML = feedbackHTML;
+            overlay.style.display = 'flex';
         }
 
         // --- Level Generation ---
@@ -691,74 +785,92 @@
 
         function generateSingleLevel(i) {
              let min = 1, max = 9;
-            if (i >= 3) { min = 10; max = 25; }
-            if (i >= 7) { min = 20; max = 50; }
+            if (i >= 3) { min = 5; max = 20; }
+            if (i >= 6) { min = 10; max = 50; } 
             
             const v = variables[Math.floor(Math.random() * variables.length)];
-            const addVal = Math.floor(Math.random() * (max - min + 1)) + min;
-            const answer = Math.floor(Math.random() * (max - min + 1)) + min;
-            const total = answer + addVal;
-
-            let type = 'left-var';
-            if (i >= 3 && i < 6) type = 'right-var';
-            if (i >= 6 && i < 8) type = Math.random() > 0.5 ? 'bird-left' : 'bird-right';
-            if (i === 9) type = 'boss';
+            const num1 = Math.floor(Math.random() * (max - min + 1)) + min; 
+            const num2 = Math.floor(Math.random() * (max - min + 1)) + min;
 
             let level = {
                 id: i + 1,
-                targetNum: addVal,
-                correctOp: 'sub',
-                variable: v,
-                answer: answer,
-                type: type
+                targetNum: num1,
+                variable: v
             };
 
-            // Set Content
-            if (type === 'left-var' || type === 'bird-left') {
-                level.leftContent = `${v} + ${addVal}`;
+            let type = '';
+
+            // Distribution Logic
+            // Level 1-3 (i=0,1,2): Addition Equations (Solve by SUB)
+            // Level 4-6 (i=3,4,5): Subtraction Equations (Solve by ADD)
+            // Level 7-10 (i=6,7,8,9): Boss/Master (Fill in blank to unlock)
+
+            if (i < 3) {
+                // Addition: x + 5 = 12
+                const answer = num2;
+                const total = answer + num1;
+                level.correctOp = 'sub';
+                level.answer = answer;
+                level.leftContent = `${v} + ${num1}`;
                 level.rightContent = `${total}`;
                 level.answerLeft = v;
                 level.answerRight = answer;
-            } else if (type === 'right-var' || type === 'bird-right') {
-                level.leftContent = `${total}`;
-                level.rightContent = `${v} + ${addVal}`;
-                level.answerLeft = answer;
-                level.answerRight = v;
-            } else if (type === 'boss') {
-                level.leftContent = `${v} + ${addVal}`;
-                level.rightContent = `${total}`;
+                level.titleZh = `Level ${i+1}: 迷霧森林 (加法考驗)`;
+                level.textZh = `${v} + ${num1} = ${total}。想把 +${num1} 變不見，要用加法還是減法？`;
+                level.textEn = `To remove +${num1}, use Addition or Subtraction?`;
+                type = 'standard';
+            } else if (i < 6) {
+                // Subtraction: x - 5 = 15
+                const answer = num2 + num1;
+                level.correctOp = 'add';
+                level.answer = answer;
+                level.leftContent = `${v} - ${num1}`;
+                level.rightContent = `${num2}`;
                 level.answerLeft = v;
                 level.answerRight = answer;
-            }
-
-            // Set Theme Names
-            let areaName = "迷霧森林 (Forest)";
-            if (i >= 3) areaName = "古老城堡 (Castle)";
-            if (i >= 7) areaName = "魔王巢穴 (Lair)";
-
-            // Set Texts
-            if (type === 'boss') {
-                level.titleZh = `Level ${i+1}: 最終魔王`;
-                level.textZh = `${v} + ${addVal} = ${total}。天平被鎖住了！快幫我填空解鎖！`;
-                level.textEn = `Locked! Fill in the blanks to unlock.`;
-            } else if (type.includes('bird')) {
-                level.titleZh = `Level ${i+1}: ${areaName}`;
-                level.textZh = `有隻鳥擋住了未知數，快點擊把牠趕走！`;
-                level.textEn = `Something is blocking the variable. Click to shoo it away!`;
-                level.hasBird = true;
+                level.titleZh = `Level ${i+1}: 古老城堡 (減法考驗)`;
+                level.textZh = `${v} - ${num1} = ${num2}。想把 -${num1} 變不見，要用加法還是減法？`;
+                level.textEn = `To remove -${num1}, use Addition or Subtraction?`;
+                type = 'standard';
             } else {
-                level.titleZh = `Level ${i+1}: ${areaName}`;
-                level.textZh = `${v} 在天平上。想把 +${addVal} 變不見，要用加法還是減法？`;
-                level.textEn = `To remove +${addVal}, use Addition or Subtraction?`;
+                // Boss Level (40%)
+                const isAdd = Math.random() > 0.5;
+                type = 'boss';
+                
+                if (isAdd) {
+                    const answer = num2;
+                    const total = answer + num1;
+                    level.correctOp = 'sub';
+                    level.answer = answer;
+                    level.leftContent = `${v} + ${num1}`;
+                    level.rightContent = `${total}`;
+                    level.answerLeft = v;
+                    level.answerRight = answer;
+                    level.operatorSymbol = '+';
+                } else {
+                    const answer = num2 + num1;
+                    level.correctOp = 'add';
+                    level.answer = answer;
+                    level.leftContent = `${v} - ${num1}`;
+                    level.rightContent = `${num2}`;
+                    level.answerLeft = v;
+                    level.answerRight = answer;
+                    level.operatorSymbol = '-';
+                }
+                
+                level.titleZh = `Level ${i+1}: 最終試煉`;
+                level.textZh = `${level.leftContent} = ${level.rightContent}。天平被鎖住了！快填寫消除 ${level.targetNum} 的數字！`;
+                level.textEn = `Locked! Fill in the number to remove ${level.targetNum}.`;
             }
             
+            level.type = type;
             levels[i] = level;
         }
 
         function generateLevels() {
             levels = [];
             for (let i = 0; i < 10; i++) {
-                levels.push({}); // Placeholder
+                levels.push({}); 
                 generateSingleLevel(i);
             }
         }
@@ -768,7 +880,7 @@
             document.body.className = '';
             if (currentLevelIndex < 3) {
                 // Default Forest
-            } else if (currentLevelIndex < 7) {
+            } else if (currentLevelIndex < 6) {
                 document.body.classList.add('theme-castle');
             } else {
                 document.body.classList.add('theme-boss');
@@ -796,43 +908,34 @@
             guardianZh.innerText = level.textZh;
             guardianEn.innerText = level.textEn;
 
-            let lContent = level.leftContent;
-            let rContent = level.rightContent;
-
-            if (level.hasBird) {
-                const birdHtml = `<div class='bird' style='top:-60px;' onclick='removeBird(this, ${level.targetNum})'>🦉</div>`;
-                const hiddenSpan = `<span id='hidden-var' class='hidden-content'>${level.variable}</span>`;
-                
-                if (level.type === 'bird-left') {
-                    lContent = `${birdHtml} ${hiddenSpan} + ${level.targetNum}`;
-                } else {
-                    rContent = `${birdHtml} ${hiddenSpan} + ${level.targetNum}`;
-                }
-            }
-
-            document.getElementById('pan-left').innerHTML = lContent;
-            document.getElementById('pan-right').innerHTML = rContent;
+            document.getElementById('pan-left').innerHTML = level.leftContent;
+            document.getElementById('pan-right').innerHTML = level.rightContent;
 
             if (level.type === 'boss') {
                 bossArea.style.display = 'flex';
                 const formulaDiv = document.getElementById('boss-formula');
-                formulaDiv.innerHTML = `
-                    <span>${level.variable} + ${level.targetNum} - </span>
-                    <input type="number" id="input-left" placeholder="?">
-                    <span> = ${level.rightContent} - </span>
-                    <input type="number" id="input-right" placeholder="?">
-                `;
-            } else if (!level.hasBird) {
+                // Dynamic Boss Formula
+                if (level.operatorSymbol === '+') {
+                     // x + 5 - [?] = 12 - [?]
+                     formulaDiv.innerHTML = `
+                        <span>${level.leftContent} - </span>
+                        <input type="number" id="input-left" placeholder="?">
+                        <span> = ${level.rightContent} - </span>
+                        <input type="number" id="input-right" placeholder="?">
+                    `;
+                } else {
+                     // x - 5 + [?] = 12 + [?]
+                     formulaDiv.innerHTML = `
+                        <span>${level.leftContent} + </span>
+                        <input type="number" id="input-left" placeholder="?">
+                        <span> = ${level.rightContent} + </span>
+                        <input type="number" id="input-right" placeholder="?">
+                    `;
+                }
+                
+            } else {
                 renderChoiceButtons(level.targetNum);
             }
-        }
-
-        window.removeBird = function(el, targetNum) {
-            el.style.display = 'none';
-            document.getElementById('hidden-var').classList.remove('hidden-content');
-            document.getElementById('guardian-text-zh').innerText = `太棒了！現在要消除 +${targetNum}，請選擇正確的魔法！`;
-            document.getElementById('guardian-text-en').innerText = `Great! Now choose the correct magic to remove +${targetNum}!`;
-            renderChoiceButtons(targetNum);
         }
 
         function renderChoiceButtons(num) {
@@ -875,7 +978,7 @@
                 beam.classList.add('shake');
                 setTimeout(() => beam.classList.remove('shake'), 500);
                 
-                loseLife();
+                loseLife('op'); 
                 if(lives > 0) {
                     if(op === 'add') {
                         guardianZh.innerText = `哎呀！原本是 +${num}，再加 ${num} 會變更大！(扣1愛心)`;
@@ -899,25 +1002,25 @@
         function modifyBalance(side, op, num) {
             const beam = document.getElementById('beam');
             const opText = op === 'add' ? `+${num}` : `-${num}`;
-            const guardianZh = document.getElementById('guardian-text-zh');
-            const guardianEn = document.getElementById('guardian-text-en');
+            // Use colors to distinguish add vs sub in pan
+            const color = op === 'add' ? '#2e7d32' : '#d81b60'; // Green for add, Red for sub
 
             if (side === 'left') {
                 leftState = 1;
-                document.getElementById('pan-left').innerHTML += ` <br><small style='color:#d81b60'>(${opText})</small>`;
+                document.getElementById('pan-left').innerHTML += ` <br><small style='color:${color}'>(${opText})</small>`;
             } else {
                 rightState = 1;
-                document.getElementById('pan-right').innerHTML += ` <br><small style='color:#d81b60'>(${opText})</small>`;
+                document.getElementById('pan-right').innerHTML += ` <br><small style='color:${color}'>(${opText})</small>`;
             }
 
             if (leftState === 1 && rightState === 0) {
                 beam.className = 'balance-beam tilt-right'; 
-                guardianZh.innerText = "天平歪了！記得：左邊做什麼，右邊也要做什麼！";
-                guardianEn.innerText = "It's tilting! Do the same to the right!";
+                document.getElementById('guardian-text-zh').innerText = "天平歪了！記得：左邊做什麼，右邊也要做什麼！";
+                document.getElementById('guardian-text-en').innerText = "It's tilting! Do the same to the right!";
             } else if (leftState === 0 && rightState === 1) {
                 beam.className = 'balance-beam tilt-left';
-                guardianZh.innerText = "不平衡了！快去操作另一邊！";
-                guardianEn.innerText = "Unbalanced! Quickly, do the same to the other side!";
+                document.getElementById('guardian-text-zh').innerText = "不平衡了！快去操作另一邊！";
+                document.getElementById('guardian-text-en').innerText = "Unbalanced! Quickly, do the same to the other side!";
             } else if (leftState === 1 && rightState === 1) {
                 beam.className = 'balance-beam balanced';
                 setTimeout(() => showFinalInput(), 1000);
@@ -955,10 +1058,22 @@
             if (parseInt(inputVal) === level.answer) {
                 finishLevel();
             } else {
-                loseLife();
+                loseLife('calc'); 
                 if (lives > 0) {
-                    guardianZh.innerText = `算錯囉！${level.variable} + ${level.targetNum} = ${level.answer + level.targetNum}... 再算一次？(扣1愛心)`;
-                    guardianEn.innerText = `Calculated wrong! Try again? (-1 Heart)`;
+                    // Logic to generate hint based on type
+                    let hint = "";
+                    if (level.correctOp === 'sub') {
+                        // x + a = b -> x = b - a
+                        // total is b
+                        hint = `想一下 ${level.rightContent} - ${level.targetNum} = ?`;
+                    } else {
+                        // x - a = b -> x = b + a
+                        // rightContent is b
+                        hint = `想一下 ${level.rightContent} + ${level.targetNum} = ?`;
+                    }
+
+                    guardianZh.innerText = `算錯囉！${level.leftContent} = ${level.rightContent}... ${hint} 再算一次？(扣1愛心)`;
+                    guardianEn.innerText = `Calculated wrong! ${hint} Try again? (-1 Heart)`;
                     const input = document.getElementById('final-val');
                     input.style.border = '3px solid red';
                     setTimeout(() => input.style.border = '3px solid #4fc3f7', 500);
@@ -979,10 +1094,10 @@
                 guardianEn.innerText = "Unlocked! Now choose the correct magic!";
                 renderChoiceButtons(level.targetNum);
             } else {
-                loseLife();
+                loseLife('boss'); 
                 if (lives > 0) {
-                    guardianZh.innerText = `咒語錯誤！我們要消除 +${level.targetNum}，應該減多少？(扣1愛心)`;
-                    guardianEn.innerText = `Wrong spell! To remove +${level.targetNum}, what should we subtract?`;
+                    guardianZh.innerText = `咒語錯誤！我們要消除 ${level.targetNum}，應該填什麼數字？(扣1愛心)`;
+                    guardianEn.innerText = `Wrong spell! To remove ${level.targetNum}, what number should we fill?`;
                 }
             }
         }
@@ -1014,8 +1129,8 @@
                 };
                 controls.appendChild(nextBtn);
             } else {
-                document.querySelector('h1').innerText = "🎉 冒險完成！Victory! 🎉";
-                controls.innerHTML = "<h3>Blue:「你拯救了所有天平！」<br><span style='font-size:0.8em; color:#666;'>You saved all the balances!</span></h3>";
+                // Game Finished! Show Report
+                showFinalReport();
             }
         }
 

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天平守護者的試煉 (進階版)</title>
+    <style>
+        :root {
+            --primary-color: #6a1b9a;
+            --secondary-color: #ffca28;
+            --bg-color: #f3e5f5;
+            --text-color: #4a148c;
+            --wrong-color: #d32f2f;
+            --correct-color: #388e3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 10px; }
+        
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+
+        .balance-area {
+            height: 250px;
+            position: relative;
+            margin: 40px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .balance-beam {
+            width: 400px;
+            height: 10px;
+            background-color: #555;
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            margin-left: -200px;
+            transition: transform 0.5s cubic-bezier(0.4, 2.5, 0.4, 0.8);
+            z-index: 2;
+        }
+
+        .balance-stand {
+            width: 20px;
+            height: 200px;
+            background-color: #333;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            margin-left: -10px;
+            z-index: 1;
+        }
+
+        .pan {
+            width: 100px;
+            height: 80px;
+            border: 4px solid #555;
+            border-top: none;
+            border-radius: 0 0 50px 50px;
+            position: absolute;
+            top: 10px;
+            background: rgba(255, 215, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            flex-direction: column;
+        }
+
+        .pan-left { left: -50px; }
+        .pan-right { right: -50px; }
+        
+        .pan::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            width: 2px;
+            height: 40px;
+            background: #555;
+        }
+        .pan::after {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            border-left: 2px solid #555;
+            border-right: 2px solid #555;
+            transform: perspective(50px) rotateX(10deg);
+            opacity: 0.5;
+        }
+
+        .tilt-left { transform: rotate(-15deg); }
+        .tilt-right { transform: rotate(15deg); }
+        .balanced { transform: rotate(0deg); }
+        .shake { animation: shake 0.5s; }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .message-box {
+            background: #e1bee7;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        /* 新的按鈕排版區 */
+        .controls-wrapper {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 150px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: #666;
+        }
+
+        button {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-add { background-color: var(--primary-color); }
+        .btn-sub { background-color: #d81b60; }
+
+        button:hover { transform: scale(1.05); filter: brightness(1.1); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
+
+        .gem-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .gem {
+            width: 40px;
+            height: 40px;
+            background: #ccc;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            transition: all 0.5s;
+        }
+        .gem.active {
+            background: var(--secondary-color);
+            box-shadow: 0 0 15px var(--secondary-color);
+            animation: pop 0.5s;
+        }
+
+        .bird {
+            position: absolute;
+            font-size: 60px;
+            cursor: pointer;
+            z-index: 10;
+            animation: bounce 1s infinite alternate;
+        }
+        
+        .hidden-content { filter: blur(10px); transition: filter 0.5s; }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>⚖️ 天平守護者：加減的抉擇</h1>
+        <div id="level-indicator">Level 1</div>
+        
+        <div class="message-box">
+            <span id="guardian-text">...</span>
+        </div>
+
+        <div class="balance-area">
+            <div class="balance-beam balanced" id="beam">
+                <div class="pan pan-left" id="pan-left"></div>
+                <div class="pan pan-right" id="pan-right"></div>
+            </div>
+            <div class="balance-stand"></div>
+        </div>
+
+        <div id="boss-input-area" style="display:none;">
+            <div class="input-group">
+                <span>T + 13 - </span>
+                <input type="number" id="input-left" placeholder="?">
+                <span> = 20 - </span>
+                <input type="number" id="input-right" placeholder="?">
+            </div>
+            <button class="btn-add" onclick="checkBossInput()">解開鎖鏈</button>
+        </div>
+
+        <div class="controls-wrapper" id="controls">
+            </div>
+
+        <div class="gem-container" id="gems">
+            <div class="gem" id="gem-1">🌑</div>
+            <div class="gem" id="gem-2">🌑</div>
+            <div class="gem" id="gem-3">🌑</div>
+            <div class="gem" id="gem-4">🌑</div>
+            <div class="gem" id="gem-5">🌑</div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態與資料
+        const levels = [
+            {
+                id: 1,
+                title: "第1關：初學者天平",
+                text: "題目：b + 8 = 14。你想消除 +8，該用加法還是減法？",
+                leftContent: "b + 8",
+                rightContent: "14",
+                targetNum: 8,       // 這次要處理的數字
+                correctOp: "sub",   // 正確操作：減法 (sub) 或 加法 (add)
+                answerLeft: "b",
+                answerRight: "6",
+                winMsg: "平衡永存！減去8是正確的選擇！"
+            },
+            {
+                id: 2,
+                title: "第2關：倒過來的天平",
+                text: "題目：27 = N + 15。N 在右邊，要把 +15 變不見！",
+                leftContent: "27",
+                rightContent: "N + 15",
+                targetNum: 15,
+                correctOp: "sub",
+                answerLeft: "12",
+                answerRight: "N",
+                winMsg: "做得好！不管在哪一邊，加法都要用減法消除。"
+            },
+            {
+                id: 3,
+                title: "第3關：隱藏的數字",
+                text: "題目：16 = p + 7。守護者在看著你，別選錯咒語！",
+                leftContent: "16",
+                rightContent: "p + 7",
+                targetNum: 7,
+                correctOp: "sub",
+                answerLeft: "9",
+                answerRight: "p",
+                winMsg: "完全正確！減7最安全！"
+            },
+            {
+                id: 4,
+                title: "第4關：鳥兒的考驗",
+                text: "題目：5 + H = 12。先趕走那隻鳥，再決定怎麼做！",
+                leftContent: "<span id='h-val' class='hidden-content'>H</span> + 5",
+                rightContent: "12",
+                hasBird: true,
+                targetNum: 5,
+                correctOp: "sub",
+                answerLeft: "H",
+                answerRight: "7",
+                winMsg: "鳥兒飛走了，H 自由了！"
+            },
+            {
+                id: 5,
+                title: "第5關：最終Boss關",
+                text: "題目：T + 13 = 20。先解除鎖鏈，再進行天平操作！",
+                leftContent: "T + 13",
+                rightContent: "20",
+                isBoss: true,
+                targetNum: 13,
+                correctOp: "sub",
+                answerLeft: "T",
+                answerRight: "7",
+                winMsg: "恭喜！你已集齊5塊寶石，成為真正的天平大師！"
+            }
+        ];
+
+        let currentLevelIndex = 0;
+        let leftState = 0; // 0: 未操作, 1: 已操作
+        let rightState = 0;
+
+        function initLevel() {
+            const level = levels[currentLevelIndex];
+            const beam = document.getElementById('beam');
+            const controls = document.getElementById('controls');
+            const bossArea = document.getElementById('boss-input-area');
+            
+            // Reset
+            leftState = 0;
+            rightState = 0;
+            beam.className = 'balance-beam balanced';
+            bossArea.style.display = 'none';
+            controls.innerHTML = '';
+
+            document.getElementById('level-indicator').innerText = level.title;
+            document.getElementById('guardian-text').innerText = level.text;
+            document.getElementById('pan-left').innerHTML = level.leftContent;
+            document.getElementById('pan-right').innerHTML = level.rightContent;
+
+            if (level.hasBird) {
+                const bird = document.createElement('div');
+                bird.innerText = '🐦';
+                bird.className = 'bird';
+                bird.style.left = '30px';
+                bird.style.top = '-50px';
+                bird.onclick = function() {
+                    this.style.display = 'none';
+                    document.getElementById('h-val').classList.remove('hidden-content');
+                    document.getElementById('guardian-text').innerText = "現在要消除 +5，請選擇正確的運算！";
+                    renderChoiceButtons(level.targetNum);
+                };
+                document.getElementById('pan-left').appendChild(bird);
+                document.getElementById('guardian-text').innerText = "有東西擋住了未知數，點擊趕走它！";
+            } else if (level.isBoss) {
+                bossArea.style.display = 'flex';
+            } else {
+                renderChoiceButtons(level.targetNum);
+            }
+        }
+
+        // 渲染選擇按鈕 (加/減)
+        function renderChoiceButtons(num) {
+            const controls = document.getElementById('controls');
+            
+            // 左邊控制區
+            const leftGroup = document.createElement('div');
+            leftGroup.className = 'control-group';
+            leftGroup.innerHTML = `<h3>左邊天平</h3>`;
+            
+            const btnLeftAdd = createBtn('left', 'add', num);
+            const btnLeftSub = createBtn('left', 'sub', num);
+            leftGroup.appendChild(btnLeftAdd);
+            leftGroup.appendChild(btnLeftSub);
+
+            // 右邊控制區
+            const rightGroup = document.createElement('div');
+            rightGroup.className = 'control-group';
+            rightGroup.innerHTML = `<h3>右邊天平</h3>`;
+
+            const btnRightAdd = createBtn('right', 'add', num);
+            const btnRightSub = createBtn('right', 'sub', num);
+            rightGroup.appendChild(btnRightAdd);
+            rightGroup.appendChild(btnRightSub);
+
+            controls.appendChild(leftGroup);
+            controls.appendChild(rightGroup);
+        }
+
+        function createBtn(side, op, num) {
+            const btn = document.createElement('button');
+            const opSymbol = op === 'add' ? '+' : '-';
+            btn.innerText = `${opSymbol} ${num}`;
+            btn.className = op === 'add' ? 'btn-add' : 'btn-sub';
+            btn.onclick = () => checkAction(side, op, num, btn);
+            return btn;
+        }
+
+        // 檢查玩家選擇是否正確
+        function checkAction(side, op, num, btn) {
+            const level = levels[currentLevelIndex];
+            const beam = document.getElementById('beam');
+
+            // 判斷邏輯：如果玩家選的運算跟正確答案不同
+            if (op !== level.correctOp) {
+                // 錯誤特效
+                beam.classList.add('shake');
+                setTimeout(() => beam.classList.remove('shake'), 500);
+                
+                // 提示文字
+                if(op === 'add') {
+                    document.getElementById('guardian-text').innerText = `哎呀！原本是 +${num}，再加 ${num} 會變成 +${num*2}，更複雜了！`;
+                } else {
+                    document.getElementById('guardian-text').innerText = `試試看別的？這個方向不對喔。`;
+                }
+                return; // 阻止執行
+            }
+
+            // 如果選對了，執行平衡動作
+            btn.disabled = true; // 鎖定該按鈕
+            // 鎖定同側的另一個按鈕 (避免又加又減)
+            const parent = btn.parentElement;
+            const siblings = parent.getElementsByTagName('button');
+            for(let sb of siblings) sb.disabled = true;
+
+            modifyBalance(side, op, num);
+        }
+
+        function modifyBalance(side, op, num) {
+            const beam = document.getElementById('beam');
+            const opText = op === 'add' ? `+${num}` : `-${num}`;
+            const level = levels[currentLevelIndex];
+
+            if (side === 'left') {
+                leftState = 1;
+                document.getElementById('pan-left').innerHTML += ` <br><small style='color:red'>(${opText})</small>`;
+            } else {
+                rightState = 1;
+                document.getElementById('pan-right').innerHTML += ` <br><small style='color:red'>(${opText})</small>`;
+            }
+
+            // 處理天平傾斜
+            if (leftState === 1 && rightState === 0) {
+                beam.className = 'balance-beam tilt-right'; 
+                document.getElementById('guardian-text').innerText = "天平歪了！記得：左邊做什麼，右邊也要做什麼！";
+            } else if (leftState === 0 && rightState === 1) {
+                beam.className = 'balance-beam tilt-left';
+                document.getElementById('guardian-text').innerText = "不平衡了！快去操作另一邊！";
+            } else if (leftState === 1 && rightState === 1) {
+                beam.className = 'balance-beam balanced';
+                setTimeout(() => finishLevel(), 1000);
+            }
+        }
+
+        function checkBossInput() {
+            const val1 = document.getElementById('input-left').value;
+            const val2 = document.getElementById('input-right').value;
+            
+            if (val1 == 13 && val2 == 13) {
+                document.getElementById('boss-input-area').style.display = 'none';
+                document.getElementById('guardian-text').innerText = "鎖鏈解開！現在選擇正確的運算來消除 13！";
+                renderChoiceButtons(levels[currentLevelIndex].targetNum);
+            } else {
+                document.getElementById('guardian-text').innerText = "咒語錯誤！我們要消除 +13，應該填什麼數字？";
+            }
+        }
+
+        function finishLevel() {
+            const level = levels[currentLevelIndex];
+            document.getElementById('pan-left').innerHTML = level.answerLeft;
+            document.getElementById('pan-right').innerHTML = level.answerRight;
+            document.getElementById('guardian-text').innerText = level.winMsg;
+            
+            const gem = document.getElementById(`gem-${currentLevelIndex + 1}`);
+            gem.innerText = '💎';
+            gem.classList.add('active');
+
+            const controls = document.getElementById('controls');
+            controls.innerHTML = '';
+            
+            if (currentLevelIndex < levels.length - 1) {
+                const nextBtn = document.createElement('button');
+                nextBtn.className = 'btn-add'; // Reuse style
+                nextBtn.innerText = "前往下一關 ➡️";
+                nextBtn.onclick = () => {
+                    currentLevelIndex++;
+                    initLevel();
+                };
+                controls.appendChild(nextBtn);
+            } else {
+                document.querySelector('h1').innerText = "🎉 任務完成！ 🎉";
+                controls.innerHTML = "<h3>恭喜成為正式的天平守護者！</h3>";
+            }
+        }
+
+        initLevel();
+    </script>
+</body>
+</html>
